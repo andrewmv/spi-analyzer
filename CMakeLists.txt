@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.11)
-project(spi_analyzer)
+project(mispi_analyzer)
 
 add_definitions( -DLOGIC2 )
 
@@ -22,4 +22,4 @@ src/MiSpiSimulationDataGenerator.cpp
 src/MiSpiSimulationDataGenerator.h
 )
 
-add_analyzer_plugin(spi_analyzer SOURCES ${SOURCES})
+add_analyzer_plugin(mispi_analyzer SOURCES ${SOURCES})
