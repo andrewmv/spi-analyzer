@@ -1,10 +1,10 @@
-#include "SpiAnalyzerSettings.h"
+#include "MiSpiAnalyzerSettings.h"
 
 #include <AnalyzerHelpers.h>
 #include <sstream>
 #include <cstring>
 
-SpiAnalyzerSettings::SpiAnalyzerSettings()
+MiSpiAnalyzerSettings::MiSpiAnalyzerSettings()
     : mMosiChannel( UNDEFINED_CHANNEL ),
       mMisoChannel( UNDEFINED_CHANNEL ),
       mClockChannel( UNDEFINED_CHANNEL ),
@@ -100,11 +100,11 @@ SpiAnalyzerSettings::SpiAnalyzerSettings()
     AddChannel( mEnableChannel, "ENABLE", false );
 }
 
-SpiAnalyzerSettings::~SpiAnalyzerSettings()
+MiSpiAnalyzerSettings::~MiSpiAnalyzerSettings()
 {
 }
 
-bool SpiAnalyzerSettings::SetSettingsFromInterfaces()
+bool MiSpiAnalyzerSettings::SetSettingsFromInterfaces()
 {
     Channel mosi = mMosiChannelInterface->GetChannel();
     Channel miso = mMisoChannelInterface->GetChannel();
@@ -149,15 +149,15 @@ bool SpiAnalyzerSettings::SetSettingsFromInterfaces()
     return true;
 }
 
-void SpiAnalyzerSettings::LoadSettings( const char* settings )
+void MiSpiAnalyzerSettings::LoadSettings( const char* settings )
 {
     SimpleArchive text_archive;
     text_archive.SetString( settings );
 
     const char* name_string; // the first thing in the archive is the name of the protocol analyzer that the data belongs to.
     text_archive >> &name_string;
-    if( strcmp( name_string, "SaleaeSpiAnalyzer" ) != 0 )
-        AnalyzerHelpers::Assert( "SaleaeSpiAnalyzer: Provided with a settings string that doesn't belong to us;" );
+    if( strcmp( name_string, "SaleaeMiSpiAnalyzer" ) != 0 )
+        AnalyzerHelpers::Assert( "SaleaeMiSpiAnalyzer: Provided with a settings string that doesn't belong to us;" );
 
     text_archive >> mMosiChannel;
     text_archive >> mMisoChannel;
@@ -182,11 +182,11 @@ void SpiAnalyzerSettings::LoadSettings( const char* settings )
     UpdateInterfacesFromSettings();
 }
 
-const char* SpiAnalyzerSettings::SaveSettings()
+const char* MiSpiAnalyzerSettings::SaveSettings()
 {
     SimpleArchive text_archive;
 
-    text_archive << "SaleaeSpiAnalyzer";
+    text_archive << "SaleaeMiSpiAnalyzer";
     text_archive << mMosiChannel;
     text_archive << mMisoChannel;
     text_archive << mClockChannel;
@@ -200,7 +200,7 @@ const char* SpiAnalyzerSettings::SaveSettings()
     return SetReturnString( text_archive.GetString() );
 }
 
-void SpiAnalyzerSettings::UpdateInterfacesFromSettings()
+void MiSpiAnalyzerSettings::UpdateInterfacesFromSettings()
 {
     mMosiChannelInterface->SetChannel( mMosiChannel );
     mMisoChannelInterface->SetChannel( mMisoChannel );

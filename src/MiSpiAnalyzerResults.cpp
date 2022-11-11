@@ -1,22 +1,22 @@
-#include "SpiAnalyzerResults.h"
+#include "MiSpiAnalyzerResults.h"
 #include <AnalyzerHelpers.h>
-#include "SpiAnalyzer.h"
-#include "SpiAnalyzerSettings.h"
+#include "MiSpiAnalyzer.h"
+#include "MiSpiAnalyzerSettings.h"
 #include <iostream>
 #include <sstream>
 
 #pragma warning( disable : 4996 ) // warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead.
 
-SpiAnalyzerResults::SpiAnalyzerResults( SpiAnalyzer* analyzer, SpiAnalyzerSettings* settings )
+MiSpiAnalyzerResults::MiSpiAnalyzerResults( MiSpiAnalyzer* analyzer, MiSpiAnalyzerSettings* settings )
     : AnalyzerResults(), mSettings( settings ), mAnalyzer( analyzer )
 {
 }
 
-SpiAnalyzerResults::~SpiAnalyzerResults()
+MiSpiAnalyzerResults::~MiSpiAnalyzerResults()
 {
 }
 
-void SpiAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel,
+void MiSpiAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel,
                                              DisplayBase display_base ) // unrefereced vars commented out to remove warnings.
 {
     ClearResultStrings();
@@ -45,7 +45,7 @@ void SpiAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel,
     }
 }
 
-void SpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase display_base, U32 /*export_type_user_id*/ )
+void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase display_base, U32 /*export_type_user_id*/ )
 {
     // export_type_user_id is only important if we have more than one export type.
 
@@ -106,7 +106,7 @@ void SpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase displ
     AnalyzerHelpers::EndFile( f );
 }
 
-void SpiAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )
+void MiSpiAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )
 {
     ClearTabularText();
     Frame frame = GetFrame( frame_index );
@@ -156,7 +156,7 @@ void SpiAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase 
     AddTabularText( ss.str().c_str() );
 }
 
-void SpiAnalyzerResults::GeneratePacketTabularText( U64 /*packet_id*/,
+void MiSpiAnalyzerResults::GeneratePacketTabularText( U64 /*packet_id*/,
                                                     DisplayBase /*display_base*/ ) // unrefereced vars commented out to remove warnings.
 {
     ClearResultStrings();
@@ -164,7 +164,7 @@ void SpiAnalyzerResults::GeneratePacketTabularText( U64 /*packet_id*/,
 }
 
 void
-    SpiAnalyzerResults::GenerateTransactionTabularText( U64 /*transaction_id*/,
+    MiSpiAnalyzerResults::GenerateTransactionTabularText( U64 /*transaction_id*/,
                                                         DisplayBase /*display_base*/ ) // unrefereced vars commented out to remove warnings.
 {
     ClearResultStrings();

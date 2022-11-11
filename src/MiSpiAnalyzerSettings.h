@@ -4,11 +4,11 @@
 #include <AnalyzerSettings.h>
 #include <AnalyzerTypes.h>
 
-class SpiAnalyzerSettings : public AnalyzerSettings
+class MiSpiAnalyzerSettings : public AnalyzerSettings
 {
   public:
-    SpiAnalyzerSettings();
-    virtual ~SpiAnalyzerSettings();
+    MiSpiAnalyzerSettings();
+    virtual ~MiSpiAnalyzerSettings();
 
     virtual bool SetSettingsFromInterfaces();
     virtual void LoadSettings( const char* settings );
