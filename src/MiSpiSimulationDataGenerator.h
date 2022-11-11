@@ -23,13 +23,12 @@ class MiSpiSimulationDataGenerator
     ClockGenerator mClockGenerator;
 
     void CreateSpiTransaction();
-    void OutputWord_CPHA0( U64 mosi_data, U64 miso_data );
-    void OutputWord_CPHA1( U64 mosi_data, U64 miso_data );
+    void OutputWord_CPHA0( U64 mispi_data );
+    void OutputWord_CPHA1( U64 mispi_data );
 
 
     SimulationChannelDescriptorGroup mMiSpiSimulationChannels;
-    SimulationChannelDescriptor* mMiso;
-    SimulationChannelDescriptor* mMosi;
+    SimulationChannelDescriptor* mData;
     SimulationChannelDescriptor* mClock;
     SimulationChannelDescriptor* mEnable;
 };

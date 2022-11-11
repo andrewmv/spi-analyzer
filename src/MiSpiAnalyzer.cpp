@@ -11,8 +11,7 @@ MiSpiAnalyzer::MiSpiAnalyzer()
     : Analyzer2(),
       mSettings( new MiSpiAnalyzerSettings() ),
       mSimulationInitilized( false ),
-      mMosi( NULL ),
-      mMiso( NULL ),
+      mData( NULL ),
       mClock( NULL ),
       mEnable( NULL )
 {
@@ -30,10 +29,7 @@ void MiSpiAnalyzer::SetupResults()
     mResults.reset( new MiSpiAnalyzerResults( this, mSettings.get() ) );
     SetAnalyzerResults( mResults.get() );
 
-    if( mSettings->mMosiChannel != UNDEFINED_CHANNEL )
-        mResults->AddChannelBubblesWillAppearOn( mSettings->mMosiChannel );
-    if( mSettings->mMisoChannel != UNDEFINED_CHANNEL )
-        mResults->AddChannelBubblesWillAppearOn( mSettings->mMisoChannel );
+    mResults->AddChannelBubblesWillAppearOn( mSettings->mDataChannel );
 }
 
 void MiSpiAnalyzer::WorkerThread()
@@ -91,18 +87,7 @@ void MiSpiAnalyzer::Setup()
             mArrowMarker = AnalyzerResults::UpArrow;
     }
 
-
-    if( mSettings->mMosiChannel != UNDEFINED_CHANNEL )
-        mMosi = GetAnalyzerChannelData( mSettings->mMosiChannel );
-    else
-        mMosi = NULL;
-
-    if( mSettings->mMisoChannel != UNDEFINED_CHANNEL )
-        mMiso = GetAnalyzerChannelData( mSettings->mMisoChannel );
-    else
-        mMiso = NULL;
-
-
+    mData = GetAnalyzerChannelData( mSettings->mDataChannel );
     mClock = GetAnalyzerChannelData( mSettings->mClockChannel );
 
     if( mSettings->mEnableChannel != UNDEFINED_CHANNEL )
@@ -229,11 +214,8 @@ void MiSpiAnalyzer::GetWord()
     const U32 bits_per_transfer = mSettings->mBitsPerTransfer;
     const U32 bytes_per_transfer = ( bits_per_transfer + 7 ) / 8;
 
-    U64 mosi_word = 0;
-    mMosiResult.Reset( &mosi_word, mSettings->mShiftOrder, bits_per_transfer );
-
-    U64 miso_word = 0;
-    mMisoResult.Reset( &miso_word, mSettings->mShiftOrder, bits_per_transfer );
+    U64 data_word = 0;
+    mDataResult.Reset( &data_word, mSettings->mShiftOrder, bits_per_transfer );
 
     U64 first_sample = 0;
     bool need_reset = false;
@@ -264,16 +246,8 @@ void MiSpiAnalyzer::GetWord()
         if( mSettings->mDataValidEdge == AnalyzerEnums::LeadingEdge )
         {
             mCurrentSample = mClock->GetSampleNumber();
-            if( mMosi != NULL )
-            {
-                mMosi->AdvanceToAbsPosition( mCurrentSample );
-                mMosiResult.AddBit( mMosi->GetBitState() );
-            }
-            if( mMiso != NULL )
-            {
-                mMiso->AdvanceToAbsPosition( mCurrentSample );
-                mMisoResult.AddBit( mMiso->GetBitState() );
-            }
+            mData->AdvanceToAbsPosition( mCurrentSample );
+            mDataResult.AddBit( mData->GetBitState() );
             mArrowLocations.push_back( mCurrentSample );
         }
 
@@ -309,16 +283,8 @@ void MiSpiAnalyzer::GetWord()
         if( mSettings->mDataValidEdge == AnalyzerEnums::TrailingEdge )
         {
             mCurrentSample = mClock->GetSampleNumber();
-            if( mMosi != NULL )
-            {
-                mMosi->AdvanceToAbsPosition( mCurrentSample );
-                mMosiResult.AddBit( mMosi->GetBitState() );
-            }
-            if( mMiso != NULL )
-            {
-                mMiso->AdvanceToAbsPosition( mCurrentSample );
-                mMisoResult.AddBit( mMiso->GetBitState() );
-            }
+            mData->AdvanceToAbsPosition( mCurrentSample );
+            mDataResult.AddBit( mData->GetBitState() );
             mArrowLocations.push_back( mCurrentSample );
         }
     }
@@ -331,24 +297,20 @@ void MiSpiAnalyzer::GetWord()
     Frame result_frame;
     result_frame.mStartingSampleInclusive = first_sample;
     result_frame.mEndingSampleInclusive = mClock->GetSampleNumber();
-    result_frame.mData1 = mosi_word;
-    result_frame.mData2 = miso_word;
+    result_frame.mData1 = data_word;
     result_frame.mFlags = 0;
     mResults->AddFrame( result_frame );
 
     FrameV2 framev2;
 
     // Max bits per transfer == 64, max bytes == 8
-    U8 mosi_bytearray[ 8 ];
-    U8 miso_bytearray[ 8 ];
+    U8 data_bytearray[ 8 ];
     for( int i = 0; i < bytes_per_transfer; ++i )
     {
         auto bit_offset = ( bytes_per_transfer - i - 1 ) * 8;
-        mosi_bytearray[ i ] = mosi_word >> bit_offset;
-        miso_bytearray[ i ] = miso_word >> bit_offset;
+        data_bytearray[ i ] = data_word >> bit_offset;
     }
-    framev2.AddByteArray( "mosi", mosi_bytearray, bytes_per_transfer );
-    framev2.AddByteArray( "miso", miso_bytearray, bytes_per_transfer );
+    framev2.AddByteArray( "data", data_bytearray, bytes_per_transfer );
 
     mResults->AddFrameV2( framev2, "result", first_sample, mClock->GetSampleNumber() + 1 );
 
@@ -387,12 +349,12 @@ U32 MiSpiAnalyzer::GetMinimumSampleRateHz()
 
 const char* MiSpiAnalyzer::GetAnalyzerName() const
 {
-    return "SPI";
+    return "MI-SPI";
 }
 
 const char* GetAnalyzerName()
 {
-    return "SPI";
+    return "MI-SPI";
 }
 
 Analyzer* CreateAnalyzer()

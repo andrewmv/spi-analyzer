@@ -24,7 +24,7 @@ void MiSpiAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel
 
     if( ( frame.mFlags & SPI_ERROR_FLAG ) == 0 )
     {
-        if( channel == mSettings->mMosiChannel )
+        if( channel == mSettings->mDataChannel )
         {
             char number_str[ 128 ];
             AnalyzerHelpers::GetNumberString( frame.mData1, display_base, mSettings->mBitsPerTransfer, number_str, 128 );
@@ -56,16 +56,7 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
     U64 trigger_sample = mAnalyzer->GetTriggerSample();
     U32 sample_rate = mAnalyzer->GetSampleRate();
 
-    ss << "Time [s],Packet ID,MOSI,MISO" << std::endl;
-
-    bool mosi_used = true;
-    bool miso_used = true;
-
-    if( mSettings->mMosiChannel == UNDEFINED_CHANNEL )
-        mosi_used = false;
-
-    if( mSettings->mMisoChannel == UNDEFINED_CHANNEL )
-        miso_used = false;
+    ss << "Time [s],Packet ID,DATA" << std::endl;
 
     U64 num_frames = GetNumFrames();
     for( U32 i = 0; i < num_frames; i++ )
@@ -78,19 +69,14 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
         char time_str[ 128 ];
         AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
 
-        char mosi_str[ 128 ] = "";
-        if( mosi_used == true )
-            AnalyzerHelpers::GetNumberString( frame.mData1, display_base, mSettings->mBitsPerTransfer, mosi_str, 128 );
-
-        char miso_str[ 128 ] = "";
-        if( miso_used == true )
-            AnalyzerHelpers::GetNumberString( frame.mData2, display_base, mSettings->mBitsPerTransfer, miso_str, 128 );
+        char data_str[ 128 ] = "";
+        AnalyzerHelpers::GetNumberString( frame.mData2, display_base, mSettings->mBitsPerTransfer, data_str, 128 );
 
         U64 packet_id = GetPacketContainingFrameSequential( i );
         if( packet_id != INVALID_RESULT_INDEX )
-            ss << time_str << "," << packet_id << "," << mosi_str << "," << miso_str << std::endl;
+            ss << time_str << "," << packet_id << "," << data_str << std::endl;
         else
-            ss << time_str << ",," << mosi_str << "," << miso_str << std::endl; // it's ok for a frame not to be included in a packet.
+            ss << time_str << ",," << data_str << std::endl; // it's ok for a frame not to be included in a packet.
 
         AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
         ss.str( std::string() );
@@ -111,42 +97,15 @@ void MiSpiAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBas
     ClearTabularText();
     Frame frame = GetFrame( frame_index );
 
-    bool mosi_used = true;
-    bool miso_used = true;
-
-    if( mSettings->mMosiChannel == UNDEFINED_CHANNEL )
-        mosi_used = false;
-
-    if( mSettings->mMisoChannel == UNDEFINED_CHANNEL )
-        miso_used = false;
-
-    char mosi_str[ 128 ];
-    char miso_str[ 128 ];
+    char data_str[ 128 ];
 
     std::stringstream ss;
 
     if( ( frame.mFlags & SPI_ERROR_FLAG ) == 0 )
     {
-        if( mosi_used == true )
-            AnalyzerHelpers::GetNumberString( frame.mData1, display_base, mSettings->mBitsPerTransfer, mosi_str, 128 );
-        if( miso_used == true )
-            AnalyzerHelpers::GetNumberString( frame.mData2, display_base, mSettings->mBitsPerTransfer, miso_str, 128 );
+        AnalyzerHelpers::GetNumberString( frame.mData1, display_base, mSettings->mBitsPerTransfer, data_str, 128 );
 
-        if( mosi_used == true && miso_used == true )
-        {
-            ss << "MOSI: " << mosi_str << ";  MISO: " << miso_str;
-        }
-        else
-        {
-            if( mosi_used == true )
-            {
-                ss << "MOSI: " << mosi_str;
-            }
-            else
-            {
-                ss << "MISO: " << miso_str;
-            }
-        }
+        ss << "DATA: " << data_str;
     }
     else
     {

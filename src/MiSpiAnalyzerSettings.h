@@ -16,8 +16,9 @@ class MiSpiAnalyzerSettings : public AnalyzerSettings
 
     void UpdateInterfacesFromSettings();
 
-    Channel mMosiChannel;
-    Channel mMisoChannel;
+    // Channel mMosiChannel;
+    // Channel mMisoChannel;
+    Channel mDataChannel;
     Channel mClockChannel;
     Channel mEnableChannel;
     AnalyzerEnums::ShiftOrder mShiftOrder;
@@ -28,8 +29,9 @@ class MiSpiAnalyzerSettings : public AnalyzerSettings
 
 
   protected:
-    std::auto_ptr<AnalyzerSettingInterfaceChannel> mMosiChannelInterface;
-    std::auto_ptr<AnalyzerSettingInterfaceChannel> mMisoChannelInterface;
+    // std::auto_ptr<AnalyzerSettingInterfaceChannel> mMosiChannelInterface;
+    // std::auto_ptr<AnalyzerSettingInterfaceChannel> mMisoChannelInterface;
+    std::auto_ptr<AnalyzerSettingInterfaceChannel> mDataChannelInterface;
     std::auto_ptr<AnalyzerSettingInterfaceChannel> mClockChannelInterface;
     std::auto_ptr<AnalyzerSettingInterfaceChannel> mEnableChannelInterface;
     std::auto_ptr<AnalyzerSettingInterfaceNumberList> mShiftOrderInterface;

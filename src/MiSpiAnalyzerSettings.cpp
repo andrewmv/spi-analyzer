@@ -5,8 +5,7 @@
 #include <cstring>
 
 MiSpiAnalyzerSettings::MiSpiAnalyzerSettings()
-    : mMosiChannel( UNDEFINED_CHANNEL ),
-      mMisoChannel( UNDEFINED_CHANNEL ),
+    : mDataChannel( UNDEFINED_CHANNEL ),
       mClockChannel( UNDEFINED_CHANNEL ),
       mEnableChannel( UNDEFINED_CHANNEL ),
       mShiftOrder( AnalyzerEnums::MsbFirst ),
@@ -15,15 +14,10 @@ MiSpiAnalyzerSettings::MiSpiAnalyzerSettings()
       mDataValidEdge( AnalyzerEnums::LeadingEdge ),
       mEnableActiveState( BIT_LOW )
 {
-    mMosiChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
-    mMosiChannelInterface->SetTitleAndTooltip( "MOSI", "Master Out, Slave In" );
-    mMosiChannelInterface->SetChannel( mMosiChannel );
-    mMosiChannelInterface->SetSelectionOfNoneIsAllowed( true );
-
-    mMisoChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
-    mMisoChannelInterface->SetTitleAndTooltip( "MISO", "Master In, Slave Out" );
-    mMisoChannelInterface->SetChannel( mMisoChannel );
-    mMisoChannelInterface->SetSelectionOfNoneIsAllowed( true );
+    mDataChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
+    mDataChannelInterface->SetTitleAndTooltip( "Data", "MOSI/MISO (Multiplexed)" );
+    mDataChannelInterface->SetChannel( mDataChannel );
+    mDataChannelInterface->SetSelectionOfNoneIsAllowed( false );
 
     mClockChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
     mClockChannelInterface->SetTitleAndTooltip( "Clock", "Clock (CLK)" );
@@ -77,8 +71,7 @@ MiSpiAnalyzerSettings::MiSpiAnalyzerSettings()
     mEnableActiveStateInterface->SetNumber( mEnableActiveState );
 
 
-    AddInterface( mMosiChannelInterface.get() );
-    AddInterface( mMisoChannelInterface.get() );
+    AddInterface( mDataChannelInterface.get() );
     AddInterface( mClockChannelInterface.get() );
     AddInterface( mEnableChannelInterface.get() );
     AddInterface( mShiftOrderInterface.get() );
@@ -94,8 +87,7 @@ MiSpiAnalyzerSettings::MiSpiAnalyzerSettings()
     AddExportExtension( 0, "csv", "csv" );
 
     ClearChannels();
-    AddChannel( mMosiChannel, "MOSI", false );
-    AddChannel( mMisoChannel, "MISO", false );
+    AddChannel( mDataChannel, "DATA", false );
     AddChannel( mClockChannel, "CLOCK", false );
     AddChannel( mEnableChannel, "ENABLE", false );
 }
@@ -106,14 +98,12 @@ MiSpiAnalyzerSettings::~MiSpiAnalyzerSettings()
 
 bool MiSpiAnalyzerSettings::SetSettingsFromInterfaces()
 {
-    Channel mosi = mMosiChannelInterface->GetChannel();
-    Channel miso = mMisoChannelInterface->GetChannel();
+    Channel data = mDataChannelInterface->GetChannel();
     Channel clock = mClockChannelInterface->GetChannel();
     Channel enable = mEnableChannelInterface->GetChannel();
 
     std::vector<Channel> channels;
-    channels.push_back( mosi );
-    channels.push_back( miso );
+    channels.push_back( data );
     channels.push_back( clock );
     channels.push_back( enable );
 
@@ -123,14 +113,7 @@ bool MiSpiAnalyzerSettings::SetSettingsFromInterfaces()
         return false;
     }
 
-    if( ( mosi == UNDEFINED_CHANNEL ) && ( miso == UNDEFINED_CHANNEL ) )
-    {
-        SetErrorText( "Please select at least one input for either MISO or MOSI." );
-        return false;
-    }
-
-    mMosiChannel = mMosiChannelInterface->GetChannel();
-    mMisoChannel = mMisoChannelInterface->GetChannel();
+    mDataChannel = mDataChannelInterface->GetChannel();
     mClockChannel = mClockChannelInterface->GetChannel();
     mEnableChannel = mEnableChannelInterface->GetChannel();
 
@@ -141,8 +124,7 @@ bool MiSpiAnalyzerSettings::SetSettingsFromInterfaces()
     mEnableActiveState = ( BitState )U32( mEnableActiveStateInterface->GetNumber() );
 
     ClearChannels();
-    AddChannel( mMosiChannel, "MOSI", mMosiChannel != UNDEFINED_CHANNEL );
-    AddChannel( mMisoChannel, "MISO", mMisoChannel != UNDEFINED_CHANNEL );
+    AddChannel( mDataChannel, "DATA", mDataChannel != UNDEFINED_CHANNEL );
     AddChannel( mClockChannel, "CLOCK", mClockChannel != UNDEFINED_CHANNEL );
     AddChannel( mEnableChannel, "ENABLE", mEnableChannel != UNDEFINED_CHANNEL );
 
@@ -156,11 +138,10 @@ void MiSpiAnalyzerSettings::LoadSettings( const char* settings )
 
     const char* name_string; // the first thing in the archive is the name of the protocol analyzer that the data belongs to.
     text_archive >> &name_string;
-    if( strcmp( name_string, "SaleaeMiSpiAnalyzer" ) != 0 )
-        AnalyzerHelpers::Assert( "SaleaeMiSpiAnalyzer: Provided with a settings string that doesn't belong to us;" );
+    if( strcmp( name_string, "MiSpiAnalyzer" ) != 0 )
+        AnalyzerHelpers::Assert( "MiSpiAnalyzer: Provided with a settings string that doesn't belong to us;" );
 
-    text_archive >> mMosiChannel;
-    text_archive >> mMisoChannel;
+    text_archive >> mDataChannel;
     text_archive >> mClockChannel;
     text_archive >> mEnableChannel;
     text_archive >> *( U32* )&mShiftOrder;
@@ -174,8 +155,7 @@ void MiSpiAnalyzerSettings::LoadSettings( const char* settings )
     //	mUsePackets = false; //if the archive fails, set the default value
 
     ClearChannels();
-    AddChannel( mMosiChannel, "MOSI", mMosiChannel != UNDEFINED_CHANNEL );
-    AddChannel( mMisoChannel, "MISO", mMisoChannel != UNDEFINED_CHANNEL );
+    AddChannel( mDataChannel, "DATA", mDataChannel != UNDEFINED_CHANNEL );
     AddChannel( mClockChannel, "CLOCK", mClockChannel != UNDEFINED_CHANNEL );
     AddChannel( mEnableChannel, "ENABLE", mEnableChannel != UNDEFINED_CHANNEL );
 
@@ -186,9 +166,8 @@ const char* MiSpiAnalyzerSettings::SaveSettings()
 {
     SimpleArchive text_archive;
 
-    text_archive << "SaleaeMiSpiAnalyzer";
-    text_archive << mMosiChannel;
-    text_archive << mMisoChannel;
+    text_archive << "MiSpiAnalyzer";
+    text_archive << mDataChannel;
     text_archive << mClockChannel;
     text_archive << mEnableChannel;
     text_archive << mShiftOrder;
@@ -202,8 +181,7 @@ const char* MiSpiAnalyzerSettings::SaveSettings()
 
 void MiSpiAnalyzerSettings::UpdateInterfacesFromSettings()
 {
-    mMosiChannelInterface->SetChannel( mMosiChannel );
-    mMisoChannelInterface->SetChannel( mMisoChannel );
+    mDataChannelInterface->SetChannel( mDataChannel );
     mClockChannelInterface->SetChannel( mClockChannel );
     mEnableChannelInterface->SetChannel( mEnableChannel );
     mShiftOrderInterface->SetNumber( mShiftOrder );

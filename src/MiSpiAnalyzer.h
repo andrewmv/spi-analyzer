@@ -37,16 +37,14 @@ class MiSpiAnalyzer : public Analyzer2
     bool mSimulationInitilized;
     MiSpiSimulationDataGenerator mSimulationDataGenerator;
 
-    AnalyzerChannelData* mMosi;
-    AnalyzerChannelData* mMiso;
+    AnalyzerChannelData* mData;
     AnalyzerChannelData* mClock;
     AnalyzerChannelData* mEnable;
 
     U64 mCurrentSample;
     AnalyzerResults::MarkerType mArrowMarker;
     std::vector<U64> mArrowLocations;
-    DataBuilder mMosiResult;
-    DataBuilder mMisoResult;
+    DataBuilder mDataResult;
 
 
 #pragma warning( pop )
