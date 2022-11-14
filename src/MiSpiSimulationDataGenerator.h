@@ -18,11 +18,13 @@ class MiSpiSimulationDataGenerator
     MiSpiAnalyzerSettings* mSettings;
     U32 mSimulationSampleRateHz;
     U64 mValue;
+    int mDirection;
 
   protected: // SPI specific
     ClockGenerator mClockGenerator;
 
     void CreateSpiTransaction();
+    void OutputInit( int direction );
     void OutputWord_CPHA0( U64 mispi_data );
     void OutputWord_CPHA1( U64 mispi_data );
 
