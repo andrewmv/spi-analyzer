@@ -5,6 +5,12 @@
 #include "MiSpiAnalyzerResults.h"
 #include "MiSpiSimulationDataGenerator.h"
 
+enum MiSpiDirection {
+  MiSpiDirMiso,
+  MiSpiDirMosi,
+  MiSpiDirUnknown
+};
+
 class MiSpiAnalyzerSettings;
 class MiSpiAnalyzer : public Analyzer2
 {
@@ -27,6 +33,9 @@ class MiSpiAnalyzer : public Analyzer2
     void AdvanceToActiveEnableEdgeWithCorrectClockPolarity();
     bool WouldAdvancingTheClockToggleEnable( bool add_disable_frame, U64* disable_frame );
     void GetWord();
+    void FinalizeFrame(Frame frame, U64 start, U64 end);
+    void FinalizeFrameV2(FrameV2 frame, U64 start, U64 end);
+    void AnnotateDirection(FrameV2 framev2, MiSpiDirection dir);
 
 #pragma warning( push )
 #pragma warning(                                                                                                                           \

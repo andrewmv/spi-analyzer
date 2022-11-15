@@ -34,15 +34,149 @@ void MiSpiAnalyzer::SetupResults()
 
 void MiSpiAnalyzer::WorkerThread()
 {
-    Setup();
+    // Setup
+    // We're ignoring Enable, CPOL, and CPHA settings for now - AMV
+    mData = GetAnalyzerChannelData( mSettings->mDataChannel );
+    mClock = GetAnalyzerChannelData( mSettings->mClockChannel );
+    U32 mSampleRateHz = GetSampleRate();
 
-    AdvanceToActiveEnableEdgeWithCorrectClockPolarity();
+    // TODO - Variablize these
+    U32 mStartTol = 20;
+    U32 mStartMisoHighUs = 90 - mStartTol;
+    U32 mStartMosiHighUs = 160 - mStartTol;
+    U32 mStartLowUs = 400;
+    U32 mBitHighUs = 8;
+    U32 mBitLowUs = 8;
 
-    for( ;; )
+    // State machine variables
+    U8 bit_count = 0;
+    U8 data = 0;
+    U64 byte_start = 0;
+    MiSpiDirection direction = MiSpiDirUnknown;
+
+    // Wait for the clock to go low before we start analyzing anything
+    if( mClock->GetBitState() == BIT_HIGH )
+        mClock->AdvanceToNextEdge();
+
+    for( ; ; )
     {
-        GetWord();
-        CheckIfThreadShouldExit();
+        // setup legacy frame for bubbles
+        Frame frame;
+        frame.mFlags = 0;
+        frame.mData1 = 0;
+        
+        // setup v2 frame for tables
+        FrameV2 framev2;
+
+        // Get the next clock pulse
+        mClock->AdvanceToNextEdge(); //leading edge
+        U64 clock_start = mClock->GetSampleNumber();
+        mClock->AdvanceToNextEdge(); //trailing edge
+        U64 clock_end = mClock->GetSampleNumber();
+
+        // Move the progress bar along
+        ReportProgress( clock_end ); 
+
+        // How long was that?
+        U64 clock_length_samples = clock_end - clock_start;
+        U64 clock_duration_us = clock_length_samples * (mSampleRateHz / 1000000);
+
+        if (clock_duration_us > mStartMosiHighUs) {
+            // Record MOSI start
+
+            // Reset byte data
+            bit_count = 0;
+            data = 0;
+
+            // Update direction
+            direction = MiSpiDirMosi;
+
+            // Configure frame v1
+            frame.mType = MiSpiStartMosi;
+            FinalizeFrame(frame, clock_start, clock_end);
+
+            // Configure frame v2
+            // AnnotateDirection(framev2, direction);
+            mResults->AddFrameV2(framev2, "Start", clock_start, clock_end);
+            mResults->CommitResults();
+        } else if (clock_duration_us > mStartMisoHighUs) {
+            // Record MISO start
+
+            // Reset byte data
+            bit_count = 0;
+            data = 0;
+
+            // Update direction
+            direction = MiSpiDirMiso;
+
+            // Configure frame v1
+            frame.mType = MiSpiStartMiso;
+            FinalizeFrame(frame, clock_start, clock_end);
+
+            // Configure frame v2
+            // AnnotateDirection(framev2, direction);
+            mResults->AddFrameV2(framev2, "Start", clock_start, clock_end);
+            mResults->CommitResults();
+        } else {
+            // Record bit
+
+            // Determine if this edge is a 1 or a 0
+            mData->AdvanceToAbsPosition(clock_end);
+            if( mData->GetBitState() == BIT_HIGH ) {
+               data |= (1 << bit_count);
+            } 
+
+            // Handle starting a new byte
+            if (bit_count == 0) {
+                byte_start = clock_start;
+            }
+
+            bit_count++;
+
+            // Handle ending a byte
+            if (bit_count == 8) {
+                // Frame v1
+                frame.mData1 = data; 
+                frame.mType = MiSpiData;
+                FinalizeFrame(frame, byte_start, clock_end);
+
+                // Frame v2
+                framev2.AddByte("Data", data);
+                // AnnotateDirection(framev2, direction);
+                mResults->AddFrameV2(framev2, "Data", byte_start, clock_end);
+                mResults->CommitResults();
+
+                // Reset byte data
+                bit_count = 0;
+                data = 0;
+            }
+        }
     }
+}
+
+void MiSpiAnalyzer::AnnotateDirection(FrameV2 framev2, MiSpiDirection dir)
+{
+    if (dir == MiSpiDirMiso) {
+        framev2.AddString("Direction", "MISO");
+    } else if (dir == MiSpiDirMosi) {
+        framev2.AddString("Direction", "MOSI");
+    } else {
+        framev2.AddString("Direction", "Unknown");
+    }
+}
+
+void MiSpiAnalyzer::FinalizeFrame(Frame frame, U64 start, U64 end)
+{
+    frame.mStartingSampleInclusive = start;
+    frame.mEndingSampleInclusive = end; 
+    mResults->AddFrame(frame);
+    mResults->CommitResults();
+}
+
+void MiSpiAnalyzer::FinalizeFrameV2(FrameV2 framev2, U64 start, U64 end)
+{
+    mResults->AddFrameV2(framev2, "start", start, end);
+    mResults->CommitResults();
 }
 
 void MiSpiAnalyzer::AdvanceToActiveEnableEdgeWithCorrectClockPolarity()
@@ -344,7 +478,7 @@ U32 MiSpiAnalyzer::GenerateSimulationData( U64 minimum_sample_index, U32 device_
 
 U32 MiSpiAnalyzer::GetMinimumSampleRateHz()
 {
-    return 10000; // we don't have any idea, depends on the SPI rate, etc.; return the lowest rate.
+    return 125000 * 4;
 }
 
 const char* MiSpiAnalyzer::GetAnalyzerName() const

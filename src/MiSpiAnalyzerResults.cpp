@@ -22,26 +22,20 @@ void MiSpiAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel
     ClearResultStrings();
     Frame frame = GetFrame( frame_index );
 
-    if( ( frame.mFlags & SPI_ERROR_FLAG ) == 0 )
-    {
-        if( channel == mSettings->mDataChannel )
-        {
-            char number_str[ 128 ];
-            AnalyzerHelpers::GetNumberString( frame.mData1, display_base, mSettings->mBitsPerTransfer, number_str, 128 );
-            AddResultString( number_str );
-        }
-        else
-        {
-            char number_str[ 128 ];
-            AnalyzerHelpers::GetNumberString( frame.mData2, display_base, mSettings->mBitsPerTransfer, number_str, 128 );
-            AddResultString( number_str );
-        }
-    }
-    else
-    {
-        AddResultString( "Error" );
-        AddResultString( "Settings mismatch" );
-        AddResultString( "The initial (idle) state of the CLK line does not match the settings." );
+    if (frame.mType == MiSpiStartMosi) {
+        AddResultString( "SO" );
+        AddResultString( "MOSI" );
+        AddResultString( "MOSI S" );
+        AddResultString( "MOSI Start" );
+    } else if(frame.mType == MiSpiStartMiso) {
+        AddResultString( "SI" );
+        AddResultString( "MISO" );
+        AddResultString( "MISO S" );
+        AddResultString( "MISO Start" );
+    } else if (frame.mType == MiSpiData) {
+        char number_str[128];
+        AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
+        AddResultString( number_str );
     }
 }
 
@@ -70,7 +64,7 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
         AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
 
         char data_str[ 128 ] = "";
-        AnalyzerHelpers::GetNumberString( frame.mData2, display_base, mSettings->mBitsPerTransfer, data_str, 128 );
+        AnalyzerHelpers::GetNumberString( frame.mData1, display_base, mSettings->mBitsPerTransfer, data_str, 128 );
 
         U64 packet_id = GetPacketContainingFrameSequential( i );
         if( packet_id != INVALID_RESULT_INDEX )

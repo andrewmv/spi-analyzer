@@ -5,6 +5,12 @@
 
 #define SPI_ERROR_FLAG ( 1 << 0 )
 
+enum MiSpiFrameType {
+  MiSpiStartMiso,
+  MiSpiStartMosi,
+  MiSpiData
+};
+
 class MiSpiAnalyzer;
 class MiSpiAnalyzerSettings;
 
