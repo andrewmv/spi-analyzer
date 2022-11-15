@@ -84,6 +84,9 @@ void MiSpiAnalyzer::WorkerThread()
         if (clock_duration_us > mStartMosiHighUs) {
             // Record MOSI start
 
+            // Add Marker
+            mResults->AddMarker(clock_end, AnalyzerResults::Start, mSettings->mClockChannel);
+
             // Reset byte data
             bit_count = 0;
             data = 0;
@@ -103,6 +106,9 @@ void MiSpiAnalyzer::WorkerThread()
         } else if (clock_duration_us > mStartMisoHighUs) {
             // Record MISO start
 
+            // Add Marker
+            mResults->AddMarker(clock_end, AnalyzerResults::Stop, mSettings->mClockChannel);
+
             // Reset byte data
             bit_count = 0;
             data = 0;
@@ -121,6 +127,9 @@ void MiSpiAnalyzer::WorkerThread()
             mResults->CommitResults();
         } else {
             // Record bit
+
+            // Add Marker
+            mResults->AddMarker(clock_end, AnalyzerResults::DownArrow, mSettings->mClockChannel);
 
             // Determine if this edge is a 1 or a 0
             mData->AdvanceToAbsPosition(clock_end);
@@ -163,28 +172,11 @@ void MiSpiAnalyzer::WorkerThread()
     }
 }
 
-void MiSpiAnalyzer::AnnotateDirection(FrameV2 framev2, MiSpiDirection dir)
-{
-    if (dir == MiSpiDirMiso) {
-        framev2.AddString("Direction", "MISO");
-    } else if (dir == MiSpiDirMosi) {
-        framev2.AddString("Direction", "MOSI");
-    } else {
-        framev2.AddString("Direction", "Unknown");
-    }
-}
-
 void MiSpiAnalyzer::FinalizeFrame(Frame frame, U64 start, U64 end)
 {
     frame.mStartingSampleInclusive = start;
     frame.mEndingSampleInclusive = end; 
     mResults->AddFrame(frame);
-    mResults->CommitResults();
-}
-
-void MiSpiAnalyzer::FinalizeFrameV2(FrameV2 framev2, U64 start, U64 end)
-{
-    mResults->AddFrameV2(framev2, "start", start, end);
     mResults->CommitResults();
 }
 
