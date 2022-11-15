@@ -97,6 +97,7 @@ void MiSpiAnalyzer::WorkerThread()
 
             // Configure frame v2
             // AnnotateDirection(framev2, direction);
+            framev2.AddString("Direction", "MOSI");
             mResults->AddFrameV2(framev2, "Start", clock_start, clock_end);
             mResults->CommitResults();
         } else if (clock_duration_us > mStartMisoHighUs) {
@@ -115,6 +116,7 @@ void MiSpiAnalyzer::WorkerThread()
 
             // Configure frame v2
             // AnnotateDirection(framev2, direction);
+            framev2.AddString("Direction", "MISO");
             mResults->AddFrameV2(framev2, "Start", clock_start, clock_end);
             mResults->CommitResults();
         } else {
@@ -143,6 +145,13 @@ void MiSpiAnalyzer::WorkerThread()
                 // Frame v2
                 framev2.AddByte("Data", data);
                 // AnnotateDirection(framev2, direction);
+                if (direction == MiSpiDirMiso) {
+                    framev2.AddString("Direction", "MISO");
+                } else if (direction == MiSpiDirMosi) {
+                    framev2.AddString("Direction", "MOSI");
+                } else {
+                    framev2.AddString("Direction", "Unknown");
+                } 
                 mResults->AddFrameV2(framev2, "Data", byte_start, clock_end);
                 mResults->CommitResults();
 
