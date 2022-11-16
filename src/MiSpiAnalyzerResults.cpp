@@ -45,22 +45,19 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
 {
     // export_type_user_id is only important if we have more than one export type.
 
-
     std::stringstream ss;
     void* f = AnalyzerHelpers::StartFile( file );
 
     U64 trigger_sample = mAnalyzer->GetTriggerSample();
     U32 sample_rate = mAnalyzer->GetSampleRate();
+    U64 packet_count = GetNumPackets();
 
-    ss << "Time [s],Packet ID,DATA" << std::endl;
+    ss << "Time [s],Packet ID,Total Packets,DATA" << std::endl;
 
     U64 num_frames = GetNumFrames();
     for( U32 i = 0; i < num_frames; i++ )
     {
         Frame frame = GetFrame( i );
-
-        if( ( frame.mFlags & SPI_ERROR_FLAG ) != 0 )
-            continue;
 
         char time_str[ 128 ];
         AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
@@ -70,7 +67,7 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
 
         U64 packet_id = GetPacketContainingFrameSequential( i );
         if( packet_id != INVALID_RESULT_INDEX )
-            ss << time_str << "," << packet_id << "," << data_str << std::endl;
+            ss << time_str << "," << packet_id << "/" << packet_count << "," << data_str << std::endl;
         else
             ss << time_str << ",," << data_str << std::endl; // it's ok for a frame not to be included in a packet.
 
@@ -83,6 +80,7 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
             return;
         }
     }
+
 
     UpdateExportProgressAndCheckForCancel( num_frames, num_frames );
     AnalyzerHelpers::EndFile( f );

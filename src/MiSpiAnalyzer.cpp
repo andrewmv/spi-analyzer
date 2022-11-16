@@ -62,9 +62,9 @@ void MiSpiAnalyzer::WorkerThread()
     for( ; ; )
     {
         // setup legacy frame for bubbles
-        Frame frame;
-        frame.mFlags = 0;
-        frame.mData1 = 0;
+        // Frame frame;
+        // frame.mFlags = 0;
+        // frame.mData1 = 0;
         
         // setup v2 frame for tables
         FrameV2 framev2;
@@ -88,6 +88,10 @@ void MiSpiAnalyzer::WorkerThread()
             data = 0;
             direction = MiSpiDirUnknown;
             mResults->CancelPacketAndStartNewPacket();
+
+            Frame frame;
+            frame.mFlags = 0;
+            frame.mData1 = 0;
             frame.mType = MiSpiError;
             FinalizeFrame(frame, clock_start, clock_end);
 
@@ -102,21 +106,24 @@ void MiSpiAnalyzer::WorkerThread()
             data = 0;
 
             // Commit everything before this as a packet IF state is valid
-            if (direction != MiSpiDirUnknown) {
-                mResults->CommitPacketAndStartNewPacket();
-            } else {
-                mResults->CancelPacketAndStartNewPacket();
-            }
+            // if (direction != MiSpiDirUnknown) {
+            mResults->CommitPacketAndStartNewPacket();
+            // } else {
+                // mResults->CancelPacketAndStartNewPacket();
+            // }
+            mResults->CommitResults();
 
             // Update direction
             direction = MiSpiDirMosi;
 
             // Configure frame v1
+            Frame frame;
+            frame.mFlags = 0;
+            frame.mData1 = 0;
             frame.mType = MiSpiStartMosi;
             FinalizeFrame(frame, clock_start, clock_end);
 
             // Configure frame v2
-            // AnnotateDirection(framev2, direction);
             framev2.AddString("Direction", "MOSI");
             mResults->AddFrameV2(framev2, "Start", clock_start, clock_end);
             mResults->CommitResults();
@@ -130,15 +137,25 @@ void MiSpiAnalyzer::WorkerThread()
             bit_count = 0;
             data = 0;
 
+            // Commit everything before this as a packet IF state is valid
+            // if (direction != MiSpiDirUnknown) {
+                mResults->CommitPacketAndStartNewPacket();
+            // } else {
+                // mResults->CancelPacketAndStartNewPacket();
+            // }
+            mResults->CommitResults();
+
             // Update direction
             direction = MiSpiDirMiso;
 
             // Configure frame v1
+            Frame frame;
+            frame.mFlags = 0;
+            frame.mData1 = 0;
             frame.mType = MiSpiStartMiso;
             FinalizeFrame(frame, clock_start, clock_end);
 
             // Configure frame v2
-            // AnnotateDirection(framev2, direction);
             framev2.AddString("Direction", "MISO");
             mResults->AddFrameV2(framev2, "Start", clock_start, clock_end);
             mResults->CommitResults();
@@ -164,13 +181,14 @@ void MiSpiAnalyzer::WorkerThread()
             // Handle ending a byte
             if (bit_count == 8) {
                 // Frame v1
+                Frame frame;
+                frame.mFlags = 0;
                 frame.mData1 = data; 
                 frame.mType = MiSpiData;
                 FinalizeFrame(frame, byte_start, clock_end);
 
                 // Frame v2
                 framev2.AddByte("Data", data);
-                // AnnotateDirection(framev2, direction);
                 if (direction == MiSpiDirMiso) {
                     framev2.AddString("Direction", "MISO");
                 } else if (direction == MiSpiDirMosi) {
