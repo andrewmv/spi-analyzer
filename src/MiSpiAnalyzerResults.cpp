@@ -36,6 +36,8 @@ void MiSpiAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel
         char number_str[128];
         AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
         AddResultString( number_str );
+    } else if (frame.mType == MiSpiError) {
+        AddResultString( "Invalid" );
     }
 }
 

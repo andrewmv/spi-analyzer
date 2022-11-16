@@ -47,6 +47,7 @@ void MiSpiAnalyzer::WorkerThread()
     U32 mStartLowUs = 400;
     U32 mBitHighUs = 8;
     U32 mBitLowUs = 8;
+    U32 mClockTimeoutUs = 200;
 
     // State machine variables
     U8 bit_count = 0;
@@ -81,7 +82,16 @@ void MiSpiAnalyzer::WorkerThread()
         U64 clock_length_samples = clock_end - clock_start;
         U64 clock_duration_us = clock_length_samples * (mSampleRateHz / 1000000);
 
-        if (clock_duration_us > mStartMosiHighUs) {
+        if (clock_duration_us > mClockTimeoutUs) {
+            // Invalid pulse, let's reset the state machine
+            bit_count = 0;
+            data = 0;
+            direction = MiSpiDirUnknown;
+            mResults->CancelPacketAndStartNewPacket();
+            frame.mType = MiSpiError;
+            FinalizeFrame(frame, clock_start, clock_end);
+
+        } else if (clock_duration_us > mStartMosiHighUs) {
             // Record MOSI start
 
             // Add Marker
@@ -90,6 +100,13 @@ void MiSpiAnalyzer::WorkerThread()
             // Reset byte data
             bit_count = 0;
             data = 0;
+
+            // Commit everything before this as a packet IF state is valid
+            if (direction != MiSpiDirUnknown) {
+                mResults->CommitPacketAndStartNewPacket();
+            } else {
+                mResults->CancelPacketAndStartNewPacket();
+            }
 
             // Update direction
             direction = MiSpiDirMosi;
