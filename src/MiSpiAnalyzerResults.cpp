@@ -4,6 +4,7 @@
 #include "MiSpiAnalyzerSettings.h"
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #pragma warning( disable : 4996 ) // warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead.
 
@@ -48,42 +49,151 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
     std::stringstream ss;
     void* f = AnalyzerHelpers::StartFile( file );
 
-    U64 trigger_sample = mAnalyzer->GetTriggerSample();
-    U32 sample_rate = mAnalyzer->GetSampleRate();
-    U64 packet_count = GetNumPackets();
+    ss << "Direction,Repetitions,Data" << std::endl;
+    AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
+    ss.str( std::string() ); 
 
-    ss << "Time [s],Packet ID,Total Packets,DATA" << std::endl;
+    MiSpiDirection direction = MiSpiDirUnknown;
+
+    std::vector<U64> mosi_packet;
+    std::vector<U64> miso_packet;
+    std::vector<U64> new_packet;
+
+    U8 mosi_reps = 0;
+    U8 miso_reps = 0;
 
     U64 num_frames = GetNumFrames();
     for( U32 i = 0; i < num_frames; i++ )
     {
         Frame frame = GetFrame( i );
-
-        char time_str[ 128 ];
-        AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
-
-        char data_str[ 128 ] = "";
-        AnalyzerHelpers::GetNumberString( frame.mData1, display_base, mSettings->mBitsPerTransfer, data_str, 128 );
-
-        U64 packet_id = GetPacketContainingFrameSequential( i );
-        if( packet_id != INVALID_RESULT_INDEX )
-            ss << time_str << "," << packet_id << "/" << packet_count << "," << data_str << std::endl;
-        else
-            ss << time_str << ",," << data_str << std::endl; // it's ok for a frame not to be included in a packet.
-
-        AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
-        ss.str( std::string() );
+        // Switch on frame type,
+        // if it's a direction frame, set the direction variable, and ...
+        //    ... if we also already had a direction, commit packet to deduplicator for that direction
+        if ( frame.mType == MiSpiStartMosi ) {
+            if ( direction == MiSpiDirMiso )    {
+                SubmitMisoPacket(f, display_base);
+            } else if (direction == MiSpiDirMosi ) {
+                SubmitMosiPacket(f, display_base);
+            }
+            direction = MiSpiDirMosi;
+        } else if ( frame.mType == MiSpiStartMiso ) {
+            if ( direction == MiSpiDirMosi ) {
+                SubmitMosiPacket(f, display_base);
+            } else if (direction == MiSpiDirMiso) {
+                SubmitMisoPacket(f, display_base);
+            }
+            direction = MiSpiDirMiso;
+        } else if ( frame.mType == MiSpiData ) {
+        // if it's a data frame, and we don't have a direction yet, discard it
+        // if it's a data frame, and we DO have a direction, commit frame to packet
+            if ( direction != MiSpiDirUnknown ) {
+                SubmitFrame(frame);
+            }
+        // on any other frame, reset the state machine
+        } else {
+            direction = MiSpiDirUnknown;
+        }
 
         if( UpdateExportProgressAndCheckForCancel( i, num_frames ) == true )
         {
+            ClosePackets(f, display_base);
             AnalyzerHelpers::EndFile( f );
             return;
         }
     }
 
-
+    ClosePackets(f, display_base);
     UpdateExportProgressAndCheckForCancel( num_frames, num_frames );
     AnalyzerHelpers::EndFile( f );
+}
+
+void MiSpiAnalyzerResults::SubmitFrame(Frame frame) {
+    new_packet.push_back(frame.mData1);
+}
+
+// Print the last packets of the capture
+void MiSpiAnalyzerResults::ClosePackets(void *f, DisplayBase display_base) {
+    std::stringstream ss; 
+    char rep_str[ 128 ] = "";
+    //MISO
+    AnalyzerHelpers::GetNumberString( miso_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
+    ss << "MISO," << rep_str;
+    for (int i = 0; i < miso_packet.size(); i++) {
+        char data_str[ 128 ] = "";
+        AnalyzerHelpers::GetNumberString( miso_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
+        ss << "," << data_str;
+    }
+    ss << std::endl;
+    //MOSI
+    AnalyzerHelpers::GetNumberString( mosi_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
+    ss << "MOSI," << rep_str;
+    for (int i = 0; i < mosi_packet.size(); i++) {
+        char data_str[ 128 ] = "";
+        AnalyzerHelpers::GetNumberString( mosi_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
+        ss << "," << data_str;
+    }
+    AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
+    ss.str( std::string() ); 
+}
+
+void MiSpiAnalyzerResults::SubmitMisoPacket(void *f, DisplayBase display_base) {
+    if (new_packet == miso_packet) {
+        // Nothing new here
+        miso_reps++;
+    } else {
+        if (miso_packet.size() > 0) {
+            // Print the direction, rep count, packet
+            char rep_str[ 128 ] = "";
+            AnalyzerHelpers::GetNumberString( miso_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
+            std::stringstream ss; 
+            ss << "MISO," << rep_str;
+            for (int i = 0; i < miso_packet.size(); i++) {
+                char data_str[ 128 ] = "";
+                AnalyzerHelpers::GetNumberString( miso_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
+                ss << "," << data_str;
+            }
+            ss << std::endl;
+            AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
+            ss.str( std::string() ); 
+        }
+        // The new packet becomes the reference
+        miso_packet.resize(new_packet.size());
+        miso_reps = 0;
+        for (int i = 0; i < new_packet.size(); i++) {
+            miso_packet[i] = new_packet[i];
+        }
+    }
+    new_packet.resize(0);
+}
+
+void MiSpiAnalyzerResults::SubmitMosiPacket(void *f, DisplayBase display_base) {
+    if (new_packet == mosi_packet) {
+        // Nothing new here
+        mosi_reps++;
+    } else {
+        if (mosi_packet.size() > 0) {
+            // Print the direction, rep count, packet
+            char rep_str[ 128 ] = "";
+            AnalyzerHelpers::GetNumberString( mosi_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
+            std::stringstream ss; 
+            ss << "MOSI," << mosi_reps;
+            for (int i = 0; i < mosi_packet.size(); i++) {
+                char data_str[ 128 ] = "";
+                AnalyzerHelpers::GetNumberString( mosi_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
+                ss << "," << data_str;
+            }
+            ss << std::endl;
+            AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
+            ss.str( std::string() ); 
+        }
+        // The new packet becomes the reference
+        mosi_packet.resize(new_packet.size());
+        mosi_reps = 0;
+        for (int i = 0; i < new_packet.size(); i++) {
+            mosi_packet[i] = new_packet[i];
+        }
+    }
+    new_packet.resize(0);
 }
 
 void MiSpiAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )

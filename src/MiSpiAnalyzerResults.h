@@ -29,9 +29,18 @@ class MiSpiAnalyzerResults : public AnalyzerResults
     virtual void GenerateTransactionTabularText( U64 transaction_id, DisplayBase display_base );
 
   protected: // functions
+    void SubmitFrame(Frame frame);
+    void SubmitMisoPacket(void *f, DisplayBase display_base);
+    void SubmitMosiPacket(void *f, DisplayBase display_base);
+    void ClosePackets(void *f, DisplayBase display_base);
   protected: // vars
     MiSpiAnalyzerSettings* mSettings;
     MiSpiAnalyzer* mAnalyzer;
+    std::vector<U64> mosi_packet;
+    std::vector<U64> miso_packet;
+    std::vector<U64> new_packet;
+    U8 mosi_reps;
+    U8 miso_reps;
 };
 
 #endif // SPI_ANALYZER_RESULTS
