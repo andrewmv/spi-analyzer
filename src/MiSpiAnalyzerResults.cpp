@@ -59,8 +59,8 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
     std::vector<U64> miso_packet;
     std::vector<U64> new_packet;
 
-    U8 mosi_reps = 0;
-    U8 miso_reps = 0;
+    U8 mosi_reps = 1;
+    U8 miso_reps = 1;
 
     U64 num_frames = GetNumFrames();
     for( U32 i = 0; i < num_frames; i++ )
@@ -158,7 +158,7 @@ void MiSpiAnalyzerResults::SubmitMisoPacket(void *f, DisplayBase display_base) {
         }
         // The new packet becomes the reference
         miso_packet.resize(new_packet.size());
-        miso_reps = 0;
+        miso_reps = 1;
         for (int i = 0; i < new_packet.size(); i++) {
             miso_packet[i] = new_packet[i];
         }
@@ -176,7 +176,7 @@ void MiSpiAnalyzerResults::SubmitMosiPacket(void *f, DisplayBase display_base) {
             char rep_str[ 128 ] = "";
             AnalyzerHelpers::GetNumberString( mosi_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
             std::stringstream ss; 
-            ss << "MOSI," << mosi_reps;
+            ss << "MOSI," << rep_str;
             for (int i = 0; i < mosi_packet.size(); i++) {
                 char data_str[ 128 ] = "";
                 AnalyzerHelpers::GetNumberString( mosi_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
@@ -188,7 +188,7 @@ void MiSpiAnalyzerResults::SubmitMosiPacket(void *f, DisplayBase display_base) {
         }
         // The new packet becomes the reference
         mosi_packet.resize(new_packet.size());
-        mosi_reps = 0;
+        mosi_reps = 1;
         for (int i = 0; i < new_packet.size(); i++) {
             mosi_packet[i] = new_packet[i];
         }
