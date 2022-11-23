@@ -32,7 +32,9 @@ class MiSpiAnalyzerResults : public AnalyzerResults
     void SubmitFrame(Frame frame);
     void SubmitMisoPacket(void *f, DisplayBase display_base);
     void SubmitMosiPacket(void *f, DisplayBase display_base);
-    void ClosePackets(void *f, DisplayBase display_base);
+    void ClosePackets(void *f, DisplayBase display_base, int direction);
+    void CloseMisoPacket(void *f, DisplayBase display_base);
+    void CloseMosiPacket(void *f, DisplayBase display_base);
   protected: // vars
     MiSpiAnalyzerSettings* mSettings;
     MiSpiAnalyzer* mAnalyzer;

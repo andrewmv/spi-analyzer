@@ -2,14 +2,15 @@
 #define SPI_ANALYZER_H
 
 #include <Analyzer.h>
-#include "MiSpiAnalyzerResults.h"
 #include "MiSpiSimulationDataGenerator.h"
+#include "MiSpiAnalyzerResults.h"
 
 enum MiSpiDirection {
   MiSpiDirMiso,
   MiSpiDirMosi,
   MiSpiDirUnknown
 };
+
 
 class MiSpiAnalyzerSettings;
 class MiSpiAnalyzer : public Analyzer2

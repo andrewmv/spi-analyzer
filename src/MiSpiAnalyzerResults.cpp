@@ -96,13 +96,13 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
 
         if( UpdateExportProgressAndCheckForCancel( i, num_frames ) == true )
         {
-            ClosePackets(f, display_base);
+            ClosePackets(f, display_base, direction);
             AnalyzerHelpers::EndFile( f );
             return;
         }
     }
 
-    ClosePackets(f, display_base);
+    ClosePackets(f, display_base, direction);
     UpdateExportProgressAndCheckForCancel( num_frames, num_frames );
     AnalyzerHelpers::EndFile( f );
 }
@@ -111,11 +111,10 @@ void MiSpiAnalyzerResults::SubmitFrame(Frame frame) {
     new_packet.push_back(frame.mData1);
 }
 
-// Print the last packets of the capture
-void MiSpiAnalyzerResults::ClosePackets(void *f, DisplayBase display_base) {
+void MiSpiAnalyzerResults::CloseMisoPacket(void *f, DisplayBase display_base) {
+    // Print the direction, rep count, packet
     std::stringstream ss; 
     char rep_str[ 128 ] = "";
-    //MISO
     AnalyzerHelpers::GetNumberString( miso_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
     ss << "MISO," << rep_str;
     for (int i = 0; i < miso_packet.size(); i++) {
@@ -124,7 +123,14 @@ void MiSpiAnalyzerResults::ClosePackets(void *f, DisplayBase display_base) {
         ss << "," << data_str;
     }
     ss << std::endl;
-    //MOSI
+    AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
+    ss.str( std::string() );     
+}
+
+void MiSpiAnalyzerResults::CloseMosiPacket(void *f, DisplayBase display_base) {
+    // Print the direction, rep count, packet
+    std::stringstream ss; 
+    char rep_str[ 128 ] = "";
     AnalyzerHelpers::GetNumberString( mosi_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
     ss << "MOSI," << rep_str;
     for (int i = 0; i < mosi_packet.size(); i++) {
@@ -132,8 +138,21 @@ void MiSpiAnalyzerResults::ClosePackets(void *f, DisplayBase display_base) {
         AnalyzerHelpers::GetNumberString( mosi_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
         ss << "," << data_str;
     }
+    ss << std::endl;
     AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
-    ss.str( std::string() ); 
+    ss.str( std::string() );     
+}
+
+// Print the last packets of the capture
+void MiSpiAnalyzerResults::ClosePackets(void *f, DisplayBase display_base, int direction) {
+    // Print them in the order we received them
+    if (direction == MiSpiDirMosi) {
+        CloseMosiPacket(f, display_base);
+        CloseMisoPacket(f, display_base);
+    } else {
+        CloseMisoPacket(f, display_base);
+        CloseMosiPacket(f, display_base);
+    }
 }
 
 void MiSpiAnalyzerResults::SubmitMisoPacket(void *f, DisplayBase display_base) {
@@ -142,19 +161,7 @@ void MiSpiAnalyzerResults::SubmitMisoPacket(void *f, DisplayBase display_base) {
         miso_reps++;
     } else {
         if (miso_packet.size() > 0) {
-            // Print the direction, rep count, packet
-            char rep_str[ 128 ] = "";
-            AnalyzerHelpers::GetNumberString( miso_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
-            std::stringstream ss; 
-            ss << "MISO," << rep_str;
-            for (int i = 0; i < miso_packet.size(); i++) {
-                char data_str[ 128 ] = "";
-                AnalyzerHelpers::GetNumberString( miso_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
-                ss << "," << data_str;
-            }
-            ss << std::endl;
-            AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
-            ss.str( std::string() ); 
+            CloseMisoPacket(f, display_base);
         }
         // The new packet becomes the reference
         miso_packet.resize(new_packet.size());
@@ -172,19 +179,7 @@ void MiSpiAnalyzerResults::SubmitMosiPacket(void *f, DisplayBase display_base) {
         mosi_reps++;
     } else {
         if (mosi_packet.size() > 0) {
-            // Print the direction, rep count, packet
-            char rep_str[ 128 ] = "";
-            AnalyzerHelpers::GetNumberString( mosi_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
-            std::stringstream ss; 
-            ss << "MOSI," << rep_str;
-            for (int i = 0; i < mosi_packet.size(); i++) {
-                char data_str[ 128 ] = "";
-                AnalyzerHelpers::GetNumberString( mosi_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
-                ss << "," << data_str;
-            }
-            ss << std::endl;
-            AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
-            ss.str( std::string() ); 
+            CloseMosiPacket(f, display_base);
         }
         // The new packet becomes the reference
         mosi_packet.resize(new_packet.size());
