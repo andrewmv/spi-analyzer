@@ -28,12 +28,6 @@ class MiSpiAnalyzer : public Analyzer2
     virtual bool NeedsRerun();
 
   protected: // functions
-    void Setup();
-    void AdvanceToActiveEnableEdge();
-    bool IsInitialClockPolarityCorrect();
-    void AdvanceToActiveEnableEdgeWithCorrectClockPolarity();
-    bool WouldAdvancingTheClockToggleEnable( bool add_disable_frame, U64* disable_frame );
-    void GetWord();
     void FinalizeFrame(Frame frame, U64 start, U64 end);
 
 #pragma warning( push )
@@ -47,7 +41,6 @@ class MiSpiAnalyzer : public Analyzer2
 
     AnalyzerChannelData* mData;
     AnalyzerChannelData* mClock;
-    AnalyzerChannelData* mEnable;
 
     U64 mCurrentSample;
     AnalyzerResults::MarkerType mArrowMarker;

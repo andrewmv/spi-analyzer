@@ -25,13 +25,11 @@ class MiSpiSimulationDataGenerator
 
     void CreateSpiTransaction();
     void OutputInit( int direction );
-    void OutputWord_CPHA0( U64 mispi_data );
-    void OutputWord_CPHA1( U64 mispi_data );
+    void OutputWord( U64 mispi_data );
 
 
     SimulationChannelDescriptorGroup mMiSpiSimulationChannels;
     SimulationChannelDescriptor* mData;
     SimulationChannelDescriptor* mClock;
-    SimulationChannelDescriptor* mEnable;
 };
 #endif // SPI_SIMULATION_DATA_GENERATOR

@@ -49,7 +49,19 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
     std::stringstream ss;
     void* f = AnalyzerHelpers::StartFile( file );
 
-    ss << "Direction,Repetitions,Data" << std::endl;
+    ss << "Direction,Repetitions,";
+
+    if (mSettings->mShiftOrder == AnalyzerEnums::MsbFirst) {
+        ss << "Data (MSB First)";
+    } else {
+        ss << "Data (LSB First)";
+    }
+
+    for (int i = 2; i < 27; i++) {
+        ss << "," << i;
+    }
+    ss << std::endl;
+
     AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
     ss.str( std::string() ); 
 
@@ -115,11 +127,11 @@ void MiSpiAnalyzerResults::CloseMisoPacket(void *f, DisplayBase display_base) {
     // Print the direction, rep count, packet
     std::stringstream ss; 
     char rep_str[ 128 ] = "";
-    AnalyzerHelpers::GetNumberString( miso_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
+    AnalyzerHelpers::GetNumberString( miso_reps, DisplayBase::Decimal, 8, rep_str, 128 );
     ss << "MISO," << rep_str;
     for (int i = 0; i < miso_packet.size(); i++) {
         char data_str[ 128 ] = "";
-        AnalyzerHelpers::GetNumberString( miso_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
+        AnalyzerHelpers::GetNumberString( miso_packet[i], display_base, 8, data_str, 128 );
         ss << "," << data_str;
     }
     ss << std::endl;
@@ -131,11 +143,11 @@ void MiSpiAnalyzerResults::CloseMosiPacket(void *f, DisplayBase display_base) {
     // Print the direction, rep count, packet
     std::stringstream ss; 
     char rep_str[ 128 ] = "";
-    AnalyzerHelpers::GetNumberString( mosi_reps, DisplayBase::Decimal, mSettings->mBitsPerTransfer, rep_str, 128 );
+    AnalyzerHelpers::GetNumberString( mosi_reps, DisplayBase::Decimal, 8, rep_str, 128 );
     ss << "MOSI," << rep_str;
     for (int i = 0; i < mosi_packet.size(); i++) {
         char data_str[ 128 ] = "";
-        AnalyzerHelpers::GetNumberString( mosi_packet[i], display_base, mSettings->mBitsPerTransfer, data_str, 128 );
+        AnalyzerHelpers::GetNumberString( mosi_packet[i], display_base, 8, data_str, 128 );
         ss << "," << data_str;
     }
     ss << std::endl;
@@ -202,7 +214,7 @@ void MiSpiAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBas
 
     if( ( frame.mFlags & SPI_ERROR_FLAG ) == 0 )
     {
-        AnalyzerHelpers::GetNumberString( frame.mData1, display_base, mSettings->mBitsPerTransfer, data_str, 128 );
+        AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, data_str, 128 );
 
         ss << "DATA: " << data_str;
     }

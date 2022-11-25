@@ -20,12 +20,7 @@ class MiSpiAnalyzerSettings : public AnalyzerSettings
     // Channel mMisoChannel;
     Channel mDataChannel;
     Channel mClockChannel;
-    Channel mEnableChannel;
     AnalyzerEnums::ShiftOrder mShiftOrder;
-    U32 mBitsPerTransfer;
-    BitState mClockInactiveState;
-    AnalyzerEnums::Edge mDataValidEdge;
-    BitState mEnableActiveState;
 
 
   protected:
@@ -33,12 +28,7 @@ class MiSpiAnalyzerSettings : public AnalyzerSettings
     // std::auto_ptr<AnalyzerSettingInterfaceChannel> mMisoChannelInterface;
     std::auto_ptr<AnalyzerSettingInterfaceChannel> mDataChannelInterface;
     std::auto_ptr<AnalyzerSettingInterfaceChannel> mClockChannelInterface;
-    std::auto_ptr<AnalyzerSettingInterfaceChannel> mEnableChannelInterface;
     std::auto_ptr<AnalyzerSettingInterfaceNumberList> mShiftOrderInterface;
-    std::auto_ptr<AnalyzerSettingInterfaceNumberList> mBitsPerTransferInterface;
-    std::auto_ptr<AnalyzerSettingInterfaceNumberList> mClockInactiveStateInterface;
-    std::auto_ptr<AnalyzerSettingInterfaceNumberList> mDataValidEdgeInterface;
-    std::auto_ptr<AnalyzerSettingInterfaceNumberList> mEnableActiveStateInterface;
 };
 
 #endif // SPI_ANALYZER_SETTINGS
