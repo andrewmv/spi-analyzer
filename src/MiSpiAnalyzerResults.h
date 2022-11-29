@@ -9,7 +9,8 @@ enum MiSpiFrameType {
   MiSpiStartMiso,
   MiSpiStartMosi,
   MiSpiData,
-  MiSpiError
+  MiSpiError,
+  MiSpiSync
 };
 
 class MiSpiAnalyzer;

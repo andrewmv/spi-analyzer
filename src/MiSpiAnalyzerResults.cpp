@@ -33,6 +33,9 @@ void MiSpiAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel
         AddResultString( "MISO" );
         AddResultString( "MISO S" );
         AddResultString( "MISO Start" );
+    } else if (frame.mType == MiSpiSync) {
+        AddResultString( "Y" );
+        AddResultString( "Sync" );
     } else if (frame.mType == MiSpiData) {
         char number_str[128];
         AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
@@ -103,6 +106,21 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
             }
         // on any other frame, reset the state machine
         } else {
+            // and close whatever packet we were working on, if there was one
+            if (direction == MiSpiDirMosi) {
+                CloseMosiPacket(f, display_base);
+            } else if (direction == MiSpiDirMiso) {
+                CloseMisoPacket(f, display_base);
+            }
+
+            //Record sync packets
+            if ( frame.mType == MiSpiSync) {
+                std::stringstream ss;
+                ss << "Sync" << std::endl;
+                AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
+                ss.str( std::string() );     
+            }
+
             direction = MiSpiDirUnknown;
         }
 

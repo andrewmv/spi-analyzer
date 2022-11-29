@@ -45,7 +45,8 @@ void MiSpiAnalyzer::WorkerThread()
     U32 mStartLowUs = 400;
     U32 mBitHighUs = 8;
     U32 mBitLowUs = 8;
-    U32 mClockTimeoutUs = 200;
+    U32 mSyncHighUs = 270 - mStartTol;
+    U32 mClockTimeoutUs = 300;
 
     // State machine variables
     U8 bit_count = 0;
@@ -87,6 +88,22 @@ void MiSpiAnalyzer::WorkerThread()
             frame.mData1 = 0;
             frame.mType = MiSpiError;
             FinalizeFrame(frame, clock_start, clock_end);
+
+        } else if (clock_duration_us > mSyncHighUs) {
+            // Record Sync Pulse, reset state machine
+            bit_count = 0;
+            data = 0;
+            direction = MiSpiDirUnknown;
+            mResults->CancelPacketAndStartNewPacket();
+
+            Frame frame;
+            frame.mFlags = 0;
+            frame.mData1 = 0;
+            frame.mType = MiSpiSync;
+            FinalizeFrame(frame, clock_start, clock_end);
+
+            mResults->AddFrameV2(framev2, "Sync", clock_start, clock_end);
+            mResults->CommitResults();
 
         } else if (clock_duration_us > mStartMosiHighUs) {
             // Record MOSI start
