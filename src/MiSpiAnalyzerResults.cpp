@@ -108,8 +108,10 @@ void MiSpiAnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
         } else {
             // and close whatever packet we were working on, if there was one
             if (direction == MiSpiDirMosi) {
+                SubmitMosiPacket(f, display_base);
                 CloseMosiPacket(f, display_base);
             } else if (direction == MiSpiDirMiso) {
+                SubmitMisoPacket(f, display_base);
                 CloseMisoPacket(f, display_base);
             }
 
@@ -154,7 +156,9 @@ void MiSpiAnalyzerResults::CloseMisoPacket(void *f, DisplayBase display_base) {
     }
     ss << std::endl;
     AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
-    ss.str( std::string() );     
+    ss.str( std::string() ); 
+
+    miso_packet.resize(0);
 }
 
 void MiSpiAnalyzerResults::CloseMosiPacket(void *f, DisplayBase display_base) {
@@ -170,7 +174,9 @@ void MiSpiAnalyzerResults::CloseMosiPacket(void *f, DisplayBase display_base) {
     }
     ss << std::endl;
     AnalyzerHelpers::AppendToFile( ( U8* )ss.str().c_str(), ss.str().length(), f );
-    ss.str( std::string() );     
+    ss.str( std::string() ); 
+
+    mosi_packet.resize(0);
 }
 
 // Print the last packets of the capture
