@@ -74,7 +74,7 @@ void MiSpiAnalyzer::WorkerThread()
 
         // How long was that?
         U64 clock_length_samples = clock_end - clock_start;
-        U64 clock_duration_us = clock_length_samples * ( 1000000 / mSampleRateHz );
+        U64 clock_duration_us = ( clock_length_samples * 1000000 ) / mSampleRateHz;
 
         if (clock_duration_us > mClockTimeoutUs) {
             // Invalid pulse, let's reset the state machine
